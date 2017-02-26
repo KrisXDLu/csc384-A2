@@ -1,0 +1,8 @@
+General Clarifications
+
+Feb 12
+Typo on Page 4: "A model built using a combination of n-ary all-different constraints for the row and sum constraints ..." 
+It should be: "A model built using a combination of n-ary all-different constraints for the row constraints, n-ary sum constraints, ..." 
+Feb 20
+Typo in docstring for tenner_csp_model_1 in tenner_csp.py: "... with domain equal to {0-9} if the board has a 0 at that position ..." 
+It should be: "... with domain equal to {0-9} if the board has a -1 at that position ..." 
