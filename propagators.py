@@ -1,7 +1,7 @@
 #Look for #IMPLEMENT tags in this file. These tags indicate what has
-#to be implemented to complete problem solution.  
+#to be implemented to complete problem solution.
 
-'''This file will contain different constraint propagators to be used within 
+'''This file will contain different constraint propagators to be used within
    bt_search.
 
    propagator == a function with the following template
@@ -27,22 +27,22 @@
        return is true if we can continue.
 
       The list of variable values pairs are all of the values
-      the propagator pruned (using the variable's prune_value method). 
-      bt_search NEEDS to know this in order to correctly restore these 
+      the propagator pruned (using the variable's prune_value method).
+      bt_search NEEDS to know this in order to correctly restore these
       values when it undoes a variable assignment.
 
-      NOTE propagator SHOULD NOT prune a value that has already been 
+      NOTE propagator SHOULD NOT prune a value that has already been
       pruned! Nor should it prune a value twice
 
       PROPAGATOR called with newVar = None
       PROCESSING REQUIRED:
-        for plain backtracking (where we only check fully instantiated 
-        constraints) 
+        for plain backtracking (where we only check fully instantiated
+        constraints)
         we do nothing...return true, []
 
         for forward checking (where we only check constraints with one
         remaining variable)
-        we look for unary constraints of the csp (constraints whose scope 
+        we look for unary constraints of the csp (constraints whose scope
         contains only one variable) and we forward_check these constraints.
 
         for gac we establish initial GAC by initializing the GAC queue
@@ -61,9 +61,9 @@
    '''
 
 def prop_BT(csp, newVar=None):
-    '''Do plain backtracking propagation. That is, do no 
+    '''Do plain backtracking propagation. That is, do no
     propagation at all. Just check fully instantiated constraints'''
-    
+
     if not newVar:
         return True, []
     for c in csp.get_cons_with_var(newVar):
@@ -77,13 +77,65 @@ def prop_BT(csp, newVar=None):
     return True, []
 
 def prop_FC(csp, newVar=None):
-    '''Do forward checking. That is check constraints with 
-       only one uninstantiated variable. Remember to keep 
+    '''Do forward checking. That is check constraints with
+       only one uninstantiated variable. Remember to keep
        track of all pruned variable,value pairs and return '''
 #IMPLEMENT
+    pruned_list = [];
+    if not newVar:
+        for c in csp.get_all_cons():
+            if c.get_n_unasgn() == 1:
+                # x_list = c.get_unasgn_vars():
+                for x in c.get_unasgn_vars():
+                    for d in x.cur_domain():
+                        if not c.has_support(x, d):
+                            pruned_list.append((x, d))
+                            x.prune_value(d);
+                    if x.cur_domain_size() == 0:
+                        x.restore_curdom();
+                        return False, pruned_list;
+        return True, pruned_list;
+    else:
+        for c in csp.get_cons_with_var(newVar):
+            if c.get_n_unasgn() == 1:
+                # x_list = c.get_unasgn_vars():
+                for x in c.get_unasgn_vars():
+                    for d in x.cur_domain():
+                        if not c.has_support(x, d):
+                            pruned_list.append((x, d))
+                            x.prune_value(d);
+                    if x.cur_domain_size() == 0:
+                        # x.restore_curdom();
+                        return False, pruned_list;
+        return True, pruned_list;
+
+
 
 def prop_GAC(csp, newVar=None):
-    '''Do GAC propagation. If newVar is None we do initial GAC enforce 
+    '''Do GAC propagation. If newVar is None we do initial GAC enforce
        processing all constraints. Otherwise we do GAC enforce with
        constraints containing newVar on GAC Queue'''
 #IMPLEMENT
+    pruned_list = []
+    if not newVar:
+        GACQueue = csp.get_all_cons();
+    else:
+        GACQueue = csp.get_cons_with_var(newVar);
+    while GACQueue != []:
+        c = GACQueue.pop(0);
+        for v in c.get_scope():
+            for d in v.cur_domain():
+                if not c.has_support(v, d):
+                    pruned_list.append((v, d));
+                    v.prune_value(d);
+                    if v.cur_domain_size() == 0:
+                        GACQueue = [];
+                        return False, pruned_list;
+                    else:
+                        for cur_c in csp.get_cons_with_var(v):
+                            if not cur_c in GACQueue:
+                                GACQueue.append(cur_c);
+    return True, pruned_list;
+
+
+                
