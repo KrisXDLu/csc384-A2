@@ -66,6 +66,24 @@ def tenner_csp_model_1(initial_tenner_board):
     '''
     
 #IMPLEMENT
+    cons_list = []
+    row_num = len(initial_tenner_board[0]);
+    col_num = len(initial_tenner_board[0][0]);
+    for i in range(row_num):
+        for j in range(col_num):
+            if initial_tenner_board[0][i][j] == -1:
+                x = Variable(str(i) + str(j), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            else:
+                x = Variable(str(i) + str(j), [initial_tenner_board[0][i][j]]);
+            cons_list.append(x);
+    csp = CSP("model1", cons_list);
+    create_cons(cons_list, csp);
+    create_sum(cons_list, initial_tenner_board[1], csp);
+    return csp, cons_list;
+
+
+
+
 
 ##############################
 
@@ -110,4 +128,126 @@ def tenner_csp_model_2(initial_tenner_board):
        variables.
     '''
 
-#IMPLEMENT
+    cons_list = []
+    row_num = len(initial_tenner_board[0]);
+    col_num = len(initial_tenner_board[0][0]);
+    for i in range(row_num):
+        for j in range(col_num):
+            if initial_tenner_board[0][i][j] == -1:
+                x = Variable(str(i) + str(j), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            else:
+                x = Variable(str(i) + str(j), [initial_tenner_board[0][i][j]]);
+            cons_list.append(x);
+    csp = CSP("model2", cons_list);
+    create_cons2(cons_list, csp);
+    create_sum(cons_list, initial_tenner_board[1], csp);
+    return csp, cons_list;
+
+
+
+
+def create_cons(bi_cons_list, csp):
+    for i in range(int(len(bi_cons_list)/10)):
+        for j in range(10):
+            ind = 10*i + j
+            nearby = [ind-1, ind+1, ind+1-10, ind-1-10, ind-10, ind+10, ind-1+10, ind+1+10];
+            for m in range(10):
+                if m > j:
+                    cur_list = [bi_cons_list[ind], bi_cons_list[10*i + m]];
+                    c = Constraint("c" + str(i) + str(j) + str(m), cur_list);
+                    sat_tuples = add_tup(cur_list);
+                    c.add_satisfying_tuples(sat_tuples);
+                    csp.add_constraint(c);
+            add_nearby(bi_cons_list, nearby, csp, i, j);
+
+                
+
+def create_cons2(bi_cons_list, csp):
+    for i in range(int(len(bi_cons_list)/10)):
+        cur_list = [];
+        for j in range(10):
+            cur_list.append(bi_cons_list[10*i + j]);
+            add_nearby(bi_cons_list, nearby, csp, i, j);
+
+        c = Constraint("c" + i, cur_list);
+        sat_tuples = add_row(cur_list);
+        c.add_satisfying_tuples(sat_tuples);
+        csp.add_constraint(c);
+
+
+
+
+def create_sum(bi_cons_list, sum_list, csp):
+    for i in range(len(sum_list)):
+        cur_list = [];
+        for j in range(int(len(bi_cons_list)/10)):
+            cur_list.append(bi_cons_list[i + 10*j]);
+        c = Constraint("sum" + str(i), cur_list);
+        sal_tuples = add_sum(cur_list, sum_list[i]);
+        c.add_satisfying_tuples(sal_tuples);
+        csp.add_constraint(c);
+
+
+def add_nearby(bi_cons_list, nearby, csp, i, j):
+    for m in nearby:
+        try:
+            cur_list = [bi_cons_list[10*i + j], bi_cons_list[m]];
+            c = Constraint("c" + str(i) + str(j) + str(m), cur_list);
+            sat_tuples = add_tup(cur_list);
+            c.add_satisfying_tuples(sat_tuples);
+            csp.add_constraint(c);
+        except:
+            continue;
+
+def add_row(cur_list):
+    varDoms = []
+    for v in cur_list:
+        varDoms.append(v.domain())    
+    sat_tuples = []
+    for t in itertools.product(*varDoms):
+    #NOTICE use of * to convert the list v to a sequence of arguments to product
+        if check_row(t):
+            sat_tuples.append(t)
+    return sat_tuples;
+
+
+def add_tup(cur_list):
+    varDoms = []
+    for v in cur_list:
+        varDoms.append(v.domain())    
+    sat_tuples = []
+    for t in itertools.product(*varDoms):
+    #NOTICE use of * to convert the list v to a sequence of arguments to product
+        if check_bi(t):
+            sat_tuples.append(t)
+    return sat_tuples;
+
+def add_sum(cur_list, total):
+    varDoms = []
+    for v in cur_list:
+        varDoms.append(v.domain())    
+    sat_tuples = []
+    for t in itertools.product(*varDoms):
+    #NOTICE use of * to convert the list v to a sequence of arguments to product
+        if check_sum(t, total):
+            sat_tuples.append(t)
+    return sat_tuples;
+
+def check_sum(cur_list, total):
+    value = 0;
+    for item in cur_list:
+        value += item;
+    return value == total;
+
+def check_bi(tup):
+    x, y = tup;
+    return x != y;
+
+def check_row(cur_list):
+    flags = [-1 for m in range(10)];
+    for i in range(len(cur_list)):
+        if flags[i] == -1:
+            flags[i] = 1;
+        else:
+            return False;
+    return True
